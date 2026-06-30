@@ -1,0 +1,2 @@
+F=[x^2+y^2-4,x*y-1]; G=nd_gr(F,[x,y],0,2);
+p_true_nf(x*y,G,[x,y],2);  // normalFormの計算

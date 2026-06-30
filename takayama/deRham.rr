@@ -1,0 +1,54 @@
+/*
+  2024-01-01-deRham.rr を y-book 掲載用に cosmetic change したもの.
+*/
+def ex2b() {
+  import("ot_deRham.rr");
+  import("nk_restriction.rr");
+  T=ot_deRham.m_ann([p1,z0+z1*p1+z2*p1^2+z3*p1^3],[p1] | param=[z0,z1,z2,z3]);
+  Rule=[[s_1,15/2],[s_2,-11/3]]$ T=base_replace(T,Rule);
+  Int=nk_restriction.integration(T,[p1],[dp1],[1] | param=[z0,z1,z2,z3]);
+  return [Int,T];
+}
+//T=ex2b();
+/*
+ A=[[1,1,1,1],[0,1,2,3]]
+  出力
+ [[],[[2],[1],[0]]]
+  は p1^2, p1^1, p1^0 に dp1 を掛けたものが basis であることを意味する.
+  Ann は
+  [(-dp1*p1^4-7/2*p1^3)*z3+(-dp1*p1^3+1/6*p1^2)*z2+(-dp1*p1^2+23/6*p1)*z1+(-dp1*p1+15/2)*z0]  
+*/
+
+def ex3b() {
+  import("ot_deRham.rr");
+  import("nk_restriction.rr");
+  TT=ot_deRham.m_ann([p1,p2,z0+z1*p1^2+z2*p2+z3*p1*p2],[p1,p2] | param=[z0,z1,z2,z3]);
+  Rule=[[s_1,15/2],[s_2,7/5],[s_3,-11/3]]$ T=base_replace(TT,Rule);
+  Int=nk_restriction.integration(T,[p1,p2],[dp1,dp2],[1,1] | param=[z0,z1,z2,z3]);
+  return [Int,T];
+}
+T=ex3b(); print(T);
+
+/*
+A=[[1,1,1,1],
+   [0,2,0,1],
+   [0,0,1,1]]
+  Rule=[[s_1,15/2],[s_2,7/5],[s_3,-11/3]]$ T=base_replace(TT,Rule);
+  p1^1*p2^0, p1^0*p2^1, p1^0*p2^0 に dp1 dp2 を掛けたものがbasis.
+ [[[],[[1,0],[0,1],[0,0]]], 
+  // annihilator
+ [(-dp2*p2^2-34/15*p2)*p1*z3+(-dp2*p2^2-34/15*p2)*z2+(-dp2*p2+7/5)*p1^2*z1+(-dp2*p2+7/5)*z0,((-dp2*p2^3-34/15*p2^2)*z2+(p2*dp1*p1-dp2*p2^2-61/10*p2)*z0)*z3^2+((-dp2*p2^2+7/5*p2)*p1*z1*z2+(-2*dp2*p2+14/5)*p1*z0*z1)*z3+(p2*dp1*p1+2*dp2*p2^2-89/30*p2)*z1*z2^2+(2*dp2*p2-14/5)*z0*z1*z2,(-dp2*p2^2-34/15*p2)*p1*z3+(-2*dp2*p2^2-68/15*p2)*z2+(dp1*p1^3-1/6*p1^2)*z1+(dp1*p1-2*dp2*p2-47/10)*z0]]
+*/
+
+def ex3b_forM2() {
+  import("ot_deRham.rr");
+  import("nk_restriction.rr");
+  TT=ot_deRham.m_ann([x1,x2,z0+z1*x1^2+z2*x2+z3*x1*x2],[x1,x2] | param=[z0,z1,z2,z3]);
+  Rule=[[s_1,15/2],[s_2,7/5],[s_3,-11/3]]$ T=base_replace(TT,Rule);
+  Int=nk_restriction.integration(T,[x1,x2],[dx1,dx2],[1,1] | param=[z0,z1,z2,z3]);
+  return [Int,T];
+}
+T=ex3b_forM2();
+print(T2=base_replace(T[1],[[z0,1],[z1,1],[z2,1],[z3,1]]))$
+
+end$

@@ -1,0 +1,38 @@
+/* y-book/Prog/buch-binom*.rr
+  の答え合わせ用.
+*/
+import("names.rr");
+
+F1=[t1-x1,t1*t2-x2,t1*t2^2-x3];
+G1=nd_gr(F1,[t1,t2,x1,x2,x3],0,2);
+E1=poly_elimination_ideal(G1,[x1,x2,x3] | grobner_basis="yes");
+printf("\n\n")$
+
+F2=[t1-x1,t1*t2-x2,t1*t2^3-x3,t1*t2^4-x4];
+G2=nd_gr(F2,[t1,t2,x1,x2,x3,x4],0,2);
+E2=poly_elimination_ideal(G2,[x1,x2,x3,x4] | grobner_basis="yes");
+printf("\n\n")$
+
+F3=[t1-x1,t1*t3-x2,t2-x3,t2*t3-x4];
+G3=nd_gr(F3,[t1,t2,t3,x1,x2,x3,x4],0,2);
+E3=poly_elimination_ideal(G3,[x1,x2,x3,x4] | grobner_basis="yes");
+printf("\n\n")$
+
+MM=2;
+F4=[t1-x1,t1*t2-x2,t1*t2^MM-x3,t1*t2^(MM+1)-x4];
+G4=nd_gr(F4,V4=[t1,t2,x1,x2,x3,x4],0,2);
+E4=poly_elimination_ideal(G4,[x1,x2,x3,x4] | grobner_basis="yes");
+Opt4=p_true_nf(t1^2*t2^4,G4,V4,2);
+
+printf("\n\n")$
+
+/*
+[x1*x4-x2*x3,x2*x4-x3^2,x4-t2*x3,x1*x3-x2^2,   x3-t2*x2,x2-t2*x1,-x1+t1]
+ by buch-binom6.rr
+[x2*x4-x3^2,-x1*x4+x2*x3,-x1*x3+x2^2,-x4+t2*x3,-x3+t2*x2,x2-t2*x1,-x1+t1]
+*/
+
+
+
+
+end$

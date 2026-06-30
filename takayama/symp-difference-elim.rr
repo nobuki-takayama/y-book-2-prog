@@ -1,0 +1,52 @@
+/*
+  構造保存算法を差分作用素代数で消去して観測量 q 達のみの方程式を作る.
+  Hailer p.302
+Ref:  y-book-2022/Prog/symp1.rr
+Ref:  y-book-2022/Prog/2023-03-02-pp-difference*.rr
+*/
+
+/*
+  S: shift operator with respect to discrete time.
+  S p = a11 p + a12 q
+  S q = a21 p + a22 q
+  aij は discrete time に依存しないとすると
+  S^2 p = a11 S p + a12 S q
+  S^2 q = a21 S p + a22 S q
+
+  aijの具体系は symp1.rr  H4 は任意の小さい数でよい.
+
+  S p を pp, S^2 p を ppp, ... と書く.
+*/
+
+F=[pp - (a11*p+a12*q), qq - (a21*p+a22*q),
+   ppp - (a11*pp+a12*qq), qqq - (a21*pp+a22*qq)];
+
+/* p, pp, ppp を消去したい */
+G=nd_gr(F,[p,pp,ppp,q,qq,qqq],0,2)$
+Eq=G[0];
+vars(Eq);
+Eq_coef=[coef(Eq,1,q),coef(Eq,1,qq),coef(Eq,1,qqq)]$
+if ((T=Eq-Eq_coef[0]*q-Eq_coef[1]*qq-Eq_coef[2]*qqq) != 0) {error("error in Eq_coef");} else {1;}
+
+H4=h$
+A4=newvect(4,[1-H4^2*k^2/4,-H4*k^2,H4, 1-H4^2*k^2/4])/(1+H4^2*k^2/4)$
+Rule=assoc([a11,a12,a21,a22],vtol(A4))$
+Eq2=map(red,base_replace(Eq_coef,Rule))$
+printf("Eq2=[coef of q, coef of S q, coef of S^2 q]\n")$
+
+def mysolve(Eq2,K,N) {
+  H=1/100; 
+  Eq2=base_replace(Eq2,[[h,H],[k,K]]);
+  Q0=1; Q1=Q0;
+  Ans=[];
+  for (I=0; I<N; I++) {
+    Ans=cons([I,number_eval(Q0)],Ans);
+    Q2=-Eq2[1]*Q1-Eq2[0]*Q0;
+    Q0=Q1; Q1=Q2;
+  }
+  return reverse(Ans);
+}
+T=mysolve(Eq2,1,2000); gnuplot.plot_dots(T,"lines");
+//T=mysolve(Eq2,3,2000); gnuplot.gnuplot("clear"); gnuplot.plot_dots(T,"points");
+
+end$

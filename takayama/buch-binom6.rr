@@ -1,0 +1,281 @@
+/* buch-binom6.rr */
+extern N$
+extern Xvars$
+extern Verbose$
+extern Message$
+N=5;
+Xvars=[t1,t2,x1,x2,x3];
+Verbose=1;
+Message=1;
+/*
+  モノミアル - モノミアル
+  -モノミアル + モノミアル
+  (binomial) 専用のグレブナー基底.  割り算しても同じ形.
+  [係数, 指数]
+ 例: モノミアルの格納方法: [-1,2,0,3] は -x^2*y^0*z^3
+*/
+def new_monom() {
+  return newvect(N+1);
+}
+
+/*
+  lexicographic order でモノミアルを比較.
+*/
+def comp(A,B) {
+  for (I=1; I<=N; I++) {
+    if (A[I] > B[I]) return 1;
+    if (A[I] < B[I]) return -1;
+  }
+  return 0;
+}
+
+/*
+  A を B で割れるか? (A は B で reducible か?)
+  割れる場合は商を戻す.
+*/
+def is_reducible(A,B) {
+  if (A==0) return 0;
+  C=new_monom();
+  C[0]=-A[0]/B[0];
+  for (I=1; I<=N; I++) {
+    C[I]=A[I]-B[I];
+    if (C[I] < 0) return 0;
+  }
+  return C;
+}
+
+/*
+   係数付きモノミアルの掛け算.
+*/
+def mymul(A,B) {
+  C=new_monom();
+  C[0]=A[0]*B[0];
+  for (I=1; I<=N; I++) {
+    C[I]=A[I]+B[I];
+  }
+  return C;
+}
+
+def to_binom(A,B) {
+  R=comp(A,B);
+  if (R==1) return [A,B];
+  else if (R == -1) return [B,A];
+  else {
+    if (A[0]+B[0]==0) return 0;
+    else {
+      C=new_monom();
+      C[0]=A[0]+B[0];
+      if (C[0]==0) return 0; // bug fix on 2022.07.07
+      for (I=1; I<=N; I++) C[I]=A[I];
+      return [C];
+    }
+  }
+}
+/*
+  binomial F を binomial G で割る(F を G で reduce).
+  
+*/
+def reduce(F,G) {
+  if (F==0) return F;
+  C=is_reducible(F[0],G[0]);
+  if (!C) return F;  // bug fix on 2022.07.07
+  if (length(F)==1) return [mymul(C,G[1])];
+  A=F[1];
+  B=mymul(C,G[1]);
+  return to_binom(A,B);
+}
+
+/* reduce のテスト */
+reduce(F=[newvect(N+1,[1,2,0,1]),newvect(N+1,[-1,1,1,1])],
+       G=[newvect(N+1,[1,1,0,1]),newvect(N+1,[-1,0,0,1])]);
+
+/* 問題:
+  1. 複数の binomials で reduce する(割り算する)
+  2. fully reduce 
+  3. S-多項式の計算
+  4. Buchberger algorithm の適用.
+  5. reduced GB の計算
+*/
+/* 2022.06.20  buch-binom3.rr で追加 */
+
+/* F は binomial.
+   G は binomial の集合
+*/
+def reduce2(F,G) {
+  Reduced=1;
+  while (Reduced) {
+    Reduced=0;
+    for (I=0; I<length(G); I++) {
+      if (F==0) return F;
+      C=is_reducible(F[0],G[I][0]);
+      if (C) {
+	Reduced=1;
+        Fnew=reduce(F,G[I]);
+        if (Verbose) printf("%a --> %a  by %a\n",F,Fnew,G[I]);
+        F=Fnew;
+      }
+    }
+  }
+  if (length(F)==1) return F;
+  Frest=reduce2([F[1]],G);
+  if (Frest == 0) return [F[0]];
+  return [F[0],Frest[0]];
+}
+
+
+def spolynomial(F,G) {
+  E=newvect(N+1);
+  for (I=1; I<=N; I++) {
+    if (F[0][I]>G[0][I]) E[I]=F[0][I]; else E[I]=G[0][I]; // LCM
+  }
+  E1=E-F[0]; E1[0]=G[0][0];
+  E2=E-G[0]; E2[0]=F[0][0]; 
+  A=mymul(E1,F[1]); B=mymul(E2,G[1]); B[0]=-B[0];
+  return to_binom(A,B);
+}
+/* test2
+printf("spoly(%a,%a)=%a\n",G2[0],G2[1],spolynomial(G2[0],G2[1]))$
+*/
+
+def buchberger(F)
+{
+  NN = length(F);
+  Pairs = [];
+  for ( I = NN-1; I >= 0; I-- )
+    for ( J = NN-1; J > I; J-- )
+      Pairs = cons([pair_lcm(F[I],F[J]),[I,J]],Pairs);
+  G = F;
+  while ( Pairs != [] ) {
+    Pairs=qsort(Pairs);
+    // printf("Pairs=%a\n",Pairs);
+    P = car(Pairs)[1];
+    Pairs = cdr(Pairs);
+    Sp = spolynomial(G[P[0]],G[P[1]]);
+    Rem = reduce2(Sp,G);
+    if ( Rem ) {
+      if (Message) printf("%a ",length(Pairs));
+      G = append(G,[Rem]);
+      for ( I = 0; I < NN; I++ )
+        Pairs = cons([pair_lcm(G[I],G[NN]),[I,NN]],Pairs);
+      NN++;
+    }else {
+      if (Message) printf("0");
+    }
+  }
+  if (Message) printf("\n");
+  return to_minimal(G);
+}
+def is_reducible_by_set(F,Set) {
+  for (I=0; I<length(Set); I++) {
+    if (Mon=is_reducible(F[0],Set[I][0])) return [Mon,I];
+  }
+  return 0;
+}
+def to_minimal(S) {
+  G=[];
+  while (S != []) {
+    F=car(S); S=cdr(S);
+    if (is_reducible_by_set(F,append(S,G))) continue; else G = cons(F,G);
+  }
+  return G;
+}
+
+def eliminate(G,M) {
+  return base_prune(0,map(eliminate1,G,M));
+}
+def eliminate1(G,M) {
+  if (G==0) return G;
+  for (I=1; I<=M; I++) {
+    if (G[0][I] != 0) return 0;
+  }
+  return G;
+}
+
+def pair_lcm(F,G) {
+   E=newvect(N+1);
+   for (I=1; I<=N; I++) {
+     if (F[0][I]>G[0][I]) E[I]=F[0][I]; else E[I]=G[0][I]; // LCM
+   }
+   for (Deg=0,I=1; I<=N; I++) Deg += E[I];
+   return [Deg,E];
+}
+
+/* Utilities */
+def mon_to_poly(F) {
+  extern Xvars;
+  C=F[0]; E=cdr(vtol(F)); E=newvect(length(E),E);
+  return dp_dtop(C*dp_vtoe(E),Xvars);
+}
+def binom_to_poly(F) {
+  if (F==0) return 0;
+  if (length(F)==1) return mon_to_poly(F[0]);
+  return mon_to_poly(F[0])+mon_to_poly(F[1]);
+}
+
+/* test3 */
+def test3() {
+  N=5;
+  G2=[[newvect(N+1,[1, 1,0, 0,0,0]),newvect(N+1,[-1, 0,0, 1,0,0])],
+      [newvect(N+1,[1, 1,1, 0,0,0]),newvect(N+1,[-1, 0,0, 0,1,0])],
+      [newvect(N+1,[1, 1,2, 0,0,0]),newvect(N+1,[-1, 0,0, 0,0,1])]]$
+  //F2= [newvect(N+1,[1, 2,2, 0,0,0]),newvect(N+1,[-1, 0,0, 0,2,0])]$
+  // F2= [newvect(N+1,[1, 2,2, 0,0,0])]$
+  // reduce2(F2,G2);
+  G3=buchberger(G2);
+  eliminate(G3,2);
+}
+
+// 4nen-m1/toric-ex2.rr
+/*
+  test4(M) は A=[[1,1,1,1],[0,1,M,M+1]] できまる toric ideal を求める.
+*/ 
+def test4(MM) {
+  N=6;
+  Xvars=[t1,t2,x1,x2,x3,x4];
+  F=[ [newvect(N+1,[1,1,0, 0,0,0,0]),newvect(N+1,[-1,0,0, 1,0,0,0])],
+      [newvect(N+1,[1,1,1, 0,0,0,0]),newvect(N+1,[-1,0,0, 0,1,0,0])],
+      [newvect(N+1,[1,1,MM, 0,0,0,0]),newvect(N+1,[-1,0,0, 0,0,1,0])],
+      [newvect(N+1,[1,1,MM+1, 0,0,0,0]),newvect(N+1,[-1,0,0, 0,0,0,1])] ];
+  T0=time();
+  G=buchberger(F);
+  printf("Time=%a\n",time()[0]-T0[0])$
+  map(binom_to_poly,eliminate(G,2));
+}
+
+// test4(3);
+
+/*
+  test5(M,B) は A=[[1,1,1,1],[0,1,M,M+1]] できまる toric ideal をもとめ,
+   AU=B, U>=0 をみたす U を一つ求める.
+*/ 
+def test5(MM,B) {
+  BB=B;
+  N=6;
+  Xvars=[t1,t2,x1,x2,x3,x4];
+  F=[ [newvect(N+1,[1,1,0, 0,0,0,0]),newvect(N+1,[-1,0,0, 1,0,0,0])],
+      [newvect(N+1,[1,1,1, 0,0,0,0]),newvect(N+1,[-1,0,0, 0,1,0,0])],
+      [newvect(N+1,[1,1,MM, 0,0,0,0]),newvect(N+1,[-1,0,0, 0,0,1,0])],
+      [newvect(N+1,[1,1,MM+1, 0,0,0,0]),newvect(N+1,[-1,0,0, 0,0,0,1])] ];
+  T0=time();
+  G=buchberger(F);
+  printf("Time for GB=%a\n",time()[0]-T0[0])$
+  B=[1,B[0],B[1],0,0,0,0];
+  U=reduce2([B],G);
+  U2=eliminate([U],2);
+  A=newmat(2,4,[[1,1,1,1],[0,1,MM,MM+1]]);
+  if (length(U2)==0) {
+      printf("No solution for\n%a U =%a^T \n",A,BB);
+      return 0;
+  }
+  U=U2[0][0];
+  U=newvect(4,[U[3],U[4],U[5],U[6]]);
+  // check
+  printf("AU-B=%a, should be 0 vector.\n",A*U-newvect(2,BB));
+  return U;
+}
+
+test5(2,[2,4]);
+// test5(5,[2,4]);  no solution
+// test5(5,[20,41]);
+
+end$

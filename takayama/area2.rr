@@ -1,0 +1,17 @@
+Plist=[[0,0],[a,0],[a+2*b,b],[a+2*b,a+b],
+                   [a+b,a+2*b],[b,a+2*b],[0,a]];
+
+/* この公式は https://imagingsolution.net/math/calc_n_point_area/ より */
+def area2(Vlist) {
+  S=0;
+  for (I=0; I<length(Vlist)-1; I++) {
+    P1=Vlist[I]; P2=Vlist[I+1];
+    S += P1[0]*P2[1]-P2[0]*P1[1];
+  }
+  return S/2;
+}
+
+print(S=area2(Plist));
+print(base_replace(S,[[a,1],[b,1]]));
+
+end$

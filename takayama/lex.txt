@@ -1,0 +1,6 @@
+ring r=0,(x,y),lp;
+ideal i=x^2+y^2-4,x*y-1;
+ideal g=groebner(i);
+g[1];
+g[2];
+reduce(x*y,g);  // normalFormの計算

@@ -1,0 +1,2 @@
+G=nd_gr_trace([x^2+y^2-4,x*y-1],[x,y],1,1,0);
+tolex(G,[x,y],0,[x,y]);

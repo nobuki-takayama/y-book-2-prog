@@ -1,0 +1,23 @@
+function out = generate_data(tspan,hit,f,A, B)
+global N
+%%%
+% input 
+%%%
+%1:gaussian, 2:impulse
+dt = tspan(2)-tspan(1);
+%%%
+% initial condition
+%%%
+y0 = zeros(N,1);
+
+inpt_param = f;
+x = discrete_fun(y0,A,B,hit,inpt_param,tspan);
+
+out = x;
+end
+
+
+function uvtx = getuv(intt,intx,uvs)
+    uvtx = uvs(intt,intx);
+end
+

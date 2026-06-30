@@ -1,0 +1,37 @@
+// Prey-predator (Lotka-Voltera system), 2021.08.29
+//  x mouse, y cat
+
+F=[-x1+a*x-b*x*y,
+   -y1-c*y+d*x*y,
+   -x2+a*x1-b*x1*y-b*x*y1,
+   -y2-c*y1+d*x1*y+d*x*y1]$
+//V=[x,x1,x2,y,y1,y2,a,b,c,d]$
+V=[x1,x2,x,y,y1,y2,a,b,c,d]$
+G=nd_gr(F,V,0,2)$
+map(print,map(vars,G))$
+
+// G[0] の係数より.
+F2=[p1-b,p2-a,p3-c*b,p4-c*a]$
+V2=[p1,p2,p3,p4,a,b,c]$
+G2=nd_gr(F2,V2,0,2)$
+
+G3=nd_gr(F,[x1,x2,x,y,y1,y2],0,2)$
+G4=nd_gr(F,[x,x2,x1,y,y1,y2],0,2)$
+
+// 行列式で. (1,x,x1,x2) の係数を並べる.
+Mat=newmat(4,4,
+ [[0,      a-b*y,-1,0],
+  [-y1-c*y,d*y,0,0],
+  [0,-b*y1, a-b*y, -1],
+  [-y2-c*y1, d*y1, d*y,0]])$
+fctr(matrix_det(Mat));
+// fctr(matrix_det(Mat))[2][0]-G[0]; は 0 となり一致.
+// 小行列式展開.
+Dmat=y*(a-b*y)*(y1+c*y)+(y1+c*y)*y1-(y2+c*y1)*y$
+matrix_det(Mat)-d*Dmat;
+Mat2=newmat(3,3,
+ [[0,      a-b*y,-1],
+  [-y1-c*y,d*y,0],
+  [-y2-c*y1, d*y1, d*y]])$
+
+end$

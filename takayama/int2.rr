@@ -1,0 +1,4 @@
+import("nk_restriction.rr");
+F=[dx-t, dt+6*t^5-x];
+nk_restriction.integration_ideal(F,[t,x],[dt,dx],[1,0]);
+end$

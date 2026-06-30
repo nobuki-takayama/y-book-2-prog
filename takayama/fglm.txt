@@ -1,0 +1,8 @@
+option(redSB);
+ring r=0,(x,y),dp;
+ideal i=x^2+y^2-4,x*y-1;
+ideal g=groebner(i);
+ring s=0,(x,y),lp;
+ideal j=fglm(r,g);
+j[1];
+j[2];

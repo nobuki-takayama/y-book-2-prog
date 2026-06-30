@@ -1,0 +1,81 @@
+/*
+ 2021-08-10 (in y-book/Prog) tk_ann_uc.rr より.
+ 未定係数法で ann を推定し HolonomicFunctions 用の Ore operator を生成.
+*/
+import("fj_simplify.rr")$
+import("noro_module_syz.rr")$
+
+def ann_uc1_flist(F_list,E_list,V) {
+  Strategy=0;
+  N=length(V);
+  M=length(F_list);
+  Ci=newvect(N+1);
+  Ci[N]=util_v("_s",[N]);
+  G=Ci[N];
+  for (I=0; I<N; I++) {
+    Ci[I] = util_v("_s",[I]);
+    for (K=0; K<M; K++) {
+      G += Ci[I]*E_list[K]*red(diff(F_list[K],V[I])/F_list[K]);
+    }
+  }
+  G = red(G);
+  Gnm=nm(G); Gdn=dn(G);
+  if (length(fctr(Gnm)) > 2) error("Gnm is factored.");
+  Seq=newvect(N+1);
+  V2=V;
+  for (I=0; I<=N; I++) {
+    Seq[I] = coef(Gnm,1,Ci[I]);
+    V2=base_set_union(V2,vars(Seq[I]));
+  }
+  print(V2);
+  Seq=vtol(Seq);
+//  printf("Seq=%a\n",Seq);
+  Syz=newsyz.module_syz(Seq,V2,Strategy,0);
+  return [Syz,[Seq,Gdn]];
+}
+
+def syzd1_to_ore_poly(Syz,V) {
+  Code=sprintf("OrePolynomial[{");
+  N=length(V);
+  First = 1;
+  for (I=0; I<=N; I++) {
+    if (Syz[I] != 0) {
+      if (First) First=0; else Code += ",";
+      Code += sprintf("{%a,{",Syz[I]);
+      for (J=0; J<N; J++) {
+	if (J==I) E=1; else E=0;
+	Code += sprintf("%a",E);
+	if (J == N-1) Code += "}}";
+	else Code += ",";
+      }
+    }
+  }
+  if (!First) Code += "},";
+  Code += "OreAlgebraObject[{";
+  for (I=0; I<N; I++) {
+    Code += sprintf("Der[%a]",V[I]);
+    if (I == N-1) Code += "},"; else Code += ",";
+  }
+  Code += "Expand, #1 + #2 &, Expand[#1*#2] &,  None], DegreeLexicographic]";
+  return Code;
+}
+
+def test_gaussHG() {
+  /* Gauss */
+  F_list=[t, 1-t, 1-t*x];
+  E_list=[a,b,c];
+  V=[x,t];
+  Syz_all= ann_uc1_flist(F_list,E_list,V)[0][0];
+  Code="ann={";
+  for (I=0; I<length(Syz_all); I++) {
+    Code += syzd1_to_ore_poly(Syz_all[I],V);
+    if (I == length(Syz_all)-1) Code += "}"; else Code += ",";
+  }
+  Code +="\n";
+  Code += "FindCreativeTelescoping[ann,{Der[t]}]\n";
+  return Code;
+}
+
+test_gaussHG();
+
+end$

@@ -1,0 +1,136 @@
+/* Buchberger algorithm for binomials by less than 100 lines. 
+   Modified program of asir-book/Prog
+*/
+import("names.rr")$
+def in(F) {
+  C=dp_hc(F);
+  Mon=dp_ht(F);
+  return [C*Mon,C,Mon];
+}
+
+def multi_degree(F) {
+  F = in(F);
+  T = F[2];
+  return([dp_etov(T),F[1]]);
+}
+
+def is_reducible(F,G) {
+  DF = multi_degree(F);
+  DG = multi_degree(G);
+  N = length(DF[0]);
+  E = newvect(N);
+  for (I=0; I<N; I++) {
+    E[I]=DF[0][I]-DG[0][I];
+    if (E[I]<0) return 0;
+  }
+  return (DF[1]/DG[1])*dp_vtoe(E);
+}
+
+def spolynomial(F,G)
+{
+  DF = multi_degree(F);
+  DG = multi_degree(G);
+  N = length(DF[0]);
+  E = newvect(N);
+  for (I=0; I<N; I++) {
+    E[I]=(DF[0][I]>DG[0][I]?DF[0][I]:DG[0][I]);
+  }
+  E1=E-DF[0];
+  E2=E-DG[0];
+  L1=dp_vtoe(E1);
+  L2=dp_vtoe(E2);
+  return L1*F/DF[1]-L2*G/DG[1];
+}
+
+def reduction(F,G)
+{
+  Count=0;
+  while ( F ) {
+    printf("F=%a\n",F); if (Count++ > 10) debug();
+    for ( L = G; L != []; L = cdr(L) ) {
+      Red = car(L);
+      if ( Mono = is_reducible(F,Red) ) {
+        F = F-Mono*Red; 
+        if ( F == 0 )
+          return 0;
+        break;
+      }
+      if (length(L)==1) return F;
+    }
+  }
+  return 0;
+}
+
+def buchberger(F)
+{
+  N = length(F);
+  Pairs = [];
+  for ( I = N-1; I >= 0; I-- )
+    for ( J = N-1; J > I; J-- )
+      Pairs = cons([I,J],Pairs);
+  G = F;
+  while ( Pairs != [] ) {
+    P = car(Pairs);
+    Pairs = cdr(Pairs);
+    Sp = spolynomial(G[P[0]],G[P[1]]);
+    Rem = reduction(Sp,G);
+    if ( Rem ) {
+      G = append(G,[Rem]);
+      for ( I = 0; I < N; I++ )
+        Pairs = cons([I,N],Pairs);
+      N++;
+    }
+  }
+  return to_minimal(G);
+}
+def is_reducible_by_set(F,Set) {
+  for (I=0; I<length(Set); I++) {
+    if (Mon=is_reducible(F,Set[I])) return [Mon,I];
+  }
+  return 0;
+}
+def to_minimal(S) {
+  G=[];
+  while (S != []) {
+    F=car(S); S=cdr(S);
+    if (is_reducible_by_set(F,append(S,G))) continue; else G = cons(F,G);
+  }
+  return G;
+}
+/*------------------  Utilities,  test data ---------------*/
+
+def eliminate(G,M) {
+  if (type(G) == 4) return base_prune(0,map(eliminate,G,M));
+  GV=dp_etov(in(G)[2]);
+  for (I=0; I<M; I++) {
+    if (GV[I] != 0) return 0;
+  }
+  return G;
+}
+
+dp_ord(2);
+/* Examples */
+/*
+G=[<<1,0, 0,0,0>> - <<0,0,1,0,0>>,
+   <<0,1, 0,0,0>> - <<0,0,0,1,0>>];
+reduction(<<1,2,0,0,0>>-<<0,0,1,1,1>>,G);
+*/
+/* A=[[1,1,1],[0,1,2]] */
+G=buchberger(F=[<<1,0, 0,0,0>> - <<0,0,1,0,0>>,
+             <<1,1, 0,0,0>> - <<0,0,0,1,0>>,
+             <<1,2, 0,0,0>> - <<0,0,0,0,1>>]);
+eliminate(G,2);
+/* A=[[1,1,1,1],[0,1,2,3]] */
+G2=buchberger(F2=[<<1,0, 0,0,0,0>> - <<0,0,1,0,0,0>>,
+                  <<1,1, 0,0,0,0>> - <<0,0,0,1,0,0>>,
+                  <<1,2, 0,0,0,0>> - <<0,0,0,0,1,0>>,
+                  <<1,3, 0,0,0,0>> - <<0,0,0,0,0,1>>
+]);
+to_minimal(G3=eliminate(G2,2));
+
+/*  reduced G-basis can be obtained by
+F3=map(dp_dtop,eliminate(G2,2),[t1,t2,x1,x2,x3,x4]);
+nd_gr(F3,[x1,x2,x3,x4],0,0);
+*/
+
+end$
